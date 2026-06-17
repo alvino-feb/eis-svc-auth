@@ -1,0 +1,382 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Business {
+  id                 String             @id @default(uuid())
+  name               String
+  type               String
+  ownerName          String
+  phone              String?
+  address            String?
+  nation             String?
+  province           String?
+  city               String?
+  isActive           Boolean              @default(true)
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  BusinessMember     BusinessMember[]
+  Category           Category[]
+  Customer           Customer[]
+  Inventory          Inventory[]
+  Order              Order[]
+  OrderItem          OrderItem[]
+  OrganizationalUnit OrganizationalUnit[]
+  Outlet             Outlet[]
+  Payment            Payment[]
+  Product            Product[]
+  Role               Role[]
+  StockMovement      StockMovement[]
+  Supplier           Supplier[]
+  User               User[]
+  UserBusinessMember UserBusinessMember[]
+  UserMenu           UserMenu[]
+}
+
+model BusinessMember {
+  id                 String       @id @default(uuid())
+  businessId         String
+  code               String
+  name               String
+  type               String
+  phone              String?
+  address            String?
+  url                String?
+  isActive           Boolean              @default(true)
+  createdAt          DateTime             @default(now())
+  Business           Business             @relation(fields: [businessId], references: [id])
+  Category           Category[]
+  Customer           Customer[]
+  Inventory          Inventory[]
+  Order              Order[]
+  OrderItem          OrderItem[]
+  OrganizationalUnit OrganizationalUnit[]
+  Outlet             Outlet[]
+  Payment            Payment[]
+  Product            Product[]
+  StockMovement      StockMovement[]
+  Supplier           Supplier[]
+  UserBusinessMember UserBusinessMember[]
+  UserMenu           UserMenu[]
+
+  @@unique([businessId, code])
+}
+
+model Category {
+  id               String       @id @default(uuid())
+  businessId       String
+  name             String
+  businessMemberId String
+  createdAt        DateTime       @default(now())
+  Business         Business       @relation(fields: [businessId], references: [id])
+  BusinessMember   BusinessMember @relation(fields: [businessMemberId], references: [id])
+  Product          Product[]
+}
+
+model Customer {
+  id               String         @id @default(uuid())
+  fullName         String
+  phone            String?
+  email            String?
+  points           Int            @default(0)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @default(now())
+  businessId       String
+  businessMemberId String
+  Business         Business       @relation(fields: [businessId], references: [id])
+  BusinessMember   BusinessMember @relation(fields: [businessMemberId], references: [id])
+  Order            Order[]
+}
+
+model GroupMenu {
+  seqNo      Int      @id 
+  code       String   @unique @db.VarChar(3)
+  name       String   @db.VarChar(100)
+  createdAt  DateTime @default(now())
+
+  Menu       Menu[]
+}
+
+model Inventory {
+  id               String       @id @default(uuid())
+  outletId         String
+  productId        String
+  stock            Int            @default(0)
+  reservedStock    Int            @default(0)
+  minStock         Int            @default(0)
+  updatedAt        DateTime       @default(now())
+  businessId       String
+  businessMemberId String
+  Business         Business       @relation(fields: [businessId], references: [id])
+  BusinessMember   BusinessMember @relation(fields: [businessMemberId], references: [id])
+  Outlet           Outlet         @relation(fields: [outletId], references: [id])
+  Product          Product        @relation(fields: [productId], references: [id])
+
+  @@unique([outletId, productId])
+}
+
+model Menu {
+  seqNo      Int       @id 
+  groupCode  String
+  code       String     @unique @db.VarChar(8)
+  name       String     @db.VarChar(100)
+  type       String     @db.VarChar(1)
+  level      Int        @default(0)
+  parentCode String     @db.VarChar(8)
+  path       String
+  createdAt  DateTime   @default(now())
+  GroupMenu  GroupMenu  @relation(fields: [groupCode], references: [code])
+  UserMenu   UserMenu[]
+}
+
+model Order {
+  id               String         @id @default(uuid())
+  outletId         String
+  cashierId        String
+  customerId       String?
+  orderNumber      String         @unique
+  subtotal         Decimal        @db.Decimal(18, 2)
+  taxAmount        Decimal        @db.Decimal(18, 2)
+  discountAmount   Decimal        @db.Decimal(18, 2)
+  grandTotal       Decimal        @db.Decimal(18, 2)
+  status           String         @default("PAID")
+  syncStatus       String         @default("PENDING")
+  localDeviceId    String?
+  localOrderId     String?
+  paidAt           DateTime?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @default(now())
+  businessId       String
+  businessMemberId String
+  Business         Business       @relation(fields: [businessId], references: [id])
+  BusinessMember   BusinessMember @relation(fields: [businessMemberId], references: [id])
+  User             User           @relation(fields: [cashierId], references: [id])
+  Customer         Customer?      @relation(fields: [customerId], references: [id])
+  Outlet           Outlet         @relation(fields: [outletId], references: [id])
+  OrderItem        OrderItem[]
+  Payment          Payment[]
+
+  @@index([createdAt])
+  @@index([outletId])
+  @@index([syncStatus])
+}
+
+model OrderItem {
+  id               String         @id @default(uuid())
+  orderId          String
+  productId        String
+  productName      String
+  qty              Int
+  price            Decimal        @db.Decimal(18, 2)
+  costPrice        Decimal?       @db.Decimal(18, 2)
+  subtotal         Decimal        @db.Decimal(18, 2)
+  createdAt        DateTime       @default(now())
+  businessId       String
+  businessMemberId String
+  Business         Business       @relation(fields: [businessId], references: [id])
+  BusinessMember   BusinessMember @relation(fields: [businessMemberId], references: [id])
+  Order            Order          @relation(fields: [orderId], references: [id])
+  Product          Product        @relation(fields: [productId], references: [id])
+}
+
+model OrganizationalUnit {
+  id               String        @id @default(uuid())
+  parentId         String?
+  type             String
+  code             String
+  name             String
+  businessId       String
+  businessMemberId String
+  Business         Business       @relation(fields: [businessId], references: [id])
+  BusinessMember   BusinessMember @relation(fields: [businessMemberId], references: [id])
+
+  @@unique([businessMemberId, code])
+}
+
+model Outlet {
+  id               String          @id @default(uuid())
+  businessId       String
+  businessMemberId String
+  name             String
+  code             String
+  address          String?
+  nation           String?
+  province         String?
+  city             String?
+  isActive         Boolean         @default(true)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @default(now())
+  Inventory        Inventory[]
+  Order            Order[]
+  Business         Business        @relation(fields: [businessId], references: [id])
+  BusinessMember   BusinessMember  @relation(fields: [businessMemberId], references: [id])
+  PosDevice        PosDevice[]
+  StockMovement    StockMovement[]
+
+  @@unique([businessId, businessMemberId, code])
+}
+
+model Payment {
+  id               String         @id @default(uuid())
+  orderId          String
+  method           String
+  amount           Decimal        @db.Decimal(18, 2)
+  status           String         @default("PAID")
+  referenceNumber  String?
+  paidAt           DateTime?
+  createdAt        DateTime       @default(now())
+  businessId       String
+  businessMemberId String
+  Business         Business       @relation(fields: [businessId], references: [id])
+  BusinessMember   BusinessMember @relation(fields: [businessMemberId], references: [id])
+  Order            Order          @relation(fields: [orderId], references: [id])
+}
+
+model PosDevice {
+  id         String    @id @default(uuid())
+  outletId   String
+  deviceCode String    @unique
+  deviceName String
+  lastSyncAt DateTime?
+  createdAt  DateTime  @default(now())
+  Outlet     Outlet    @relation(fields: [outletId], references: [id])
+}
+
+model Product {
+  id               String          @id @default(uuid())
+  businessId       String
+  businessMemberId String
+  categoryId       String?
+  name             String
+  sku              String
+  barcode          String?
+  type             String          @default("SIMPLE")
+  description      String?
+  imageUrl         String?
+  price            Decimal         @db.Decimal(18, 2)
+  costPrice        Decimal?        @db.Decimal(18, 2)
+  isActive         Boolean         @default(true)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @default(now())
+  Inventory        Inventory[]
+  OrderItem        OrderItem[]
+  Business         Business        @relation(fields: [businessId], references: [id])
+  BusinessMember   BusinessMember  @relation(fields: [businessMemberId], references: [id])
+  Category         Category?       @relation(fields: [categoryId], references: [id])
+  StockMovement    StockMovement[]
+
+  @@unique([businessId, sku])
+}
+
+model Role {
+  id                 String               @id @default(uuid())
+  businessId         String
+  code               String
+  name               String
+  createdAt          DateTime             @default(now())
+  Business           Business             @relation(fields: [businessId], references: [id])
+  UserBusinessMember UserBusinessMember[]
+
+  @@unique([businessId, code])
+}
+
+model StockMovement {
+  id               String        @id @default(uuid())
+  outletId         String
+  productId        String
+  type             String
+  quantity         Int
+  beforeStock      Int
+  afterStock       Int
+  note             String?
+  referenceId      String?
+  createdAt        DateTime       @default(now())
+  businessId       String
+  businessMemberId String
+  Business         Business       @relation(fields: [businessId], references: [id])
+  BusinessMember   BusinessMember @relation(fields: [businessMemberId], references: [id])
+  Outlet           Outlet         @relation(fields: [outletId], references: [id])
+  Product          Product        @relation(fields: [productId], references: [id])
+}
+
+model Supplier {
+  id               String         @id @default(uuid())
+  name             String
+  phone            String?
+  address          String?
+  createdAt        DateTime       @default(now())
+  businessId       String
+  businessMemberId String
+  Business         Business       @relation(fields: [businessId], references: [id])
+  BusinessMember   BusinessMember @relation(fields: [businessMemberId], references: [id])
+}
+
+model User {
+  id                 String               @id @default(uuid())
+  businessId         String
+  username           String               @db.VarChar(100)
+  fullName           String?              @db.VarChar(150)
+  password           String
+  phone              String?              @db.VarChar(30)
+  isActive           Boolean              @default(true)
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  Order              Order[]
+  Business           Business             @relation(fields: [businessId], references: [id])
+  UserBusinessMember UserBusinessMember[]
+  UserMenu           UserMenu[]
+  UserSession        UserSession[]
+
+  @@unique([businessId, username])
+}
+
+model UserBusinessMember {
+  id               String         @id @default(uuid())
+  businessId       String
+  businessMemberId String
+  userId           String
+  roleId           String
+  Business         Business       @relation(fields: [businessId], references: [id])
+  BusinessMember   BusinessMember @relation(fields: [businessMemberId], references: [id])
+  Role             Role           @relation(fields: [roleId], references: [id])
+  User             User           @relation(fields: [userId], references: [id])
+
+  @@unique([businessMemberId, userId])
+}
+
+model UserMenu {
+  userId           String
+  menuCode         String
+  businessId       String
+  businessMemberId String
+  create           Boolean        @default(false)
+  edit             Boolean        @default(false)
+  delete           Boolean        @default(false)
+  createdAt        DateTime       @default(now())
+  Business         Business       @relation(fields: [businessId], references: [id])
+  BusinessMember   BusinessMember @relation(fields: [businessMemberId], references: [id])
+  Menu             Menu           @relation(fields: [menuCode], references: [code])
+  User             User           @relation(fields: [userId], references: [id])
+
+  @@id([businessId, businessMemberId, userId, menuCode])
+}
+
+model UserSession {
+  id         String   @id @default(uuid())
+  userId     String
+  token      String
+  deviceInfo String?
+  ipAddress  String?  @db.VarChar(30)
+  expiresAt  DateTime
+  isRevoked  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  User       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+}
