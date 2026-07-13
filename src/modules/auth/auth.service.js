@@ -1,6 +1,9 @@
 import * as userRepository
 from "../user/user.repository.js";
 
+import  businessMemberRepository
+from "../user/business-member.repository.js";
+
 import {
   comparePassword
 }
@@ -63,26 +66,94 @@ export const login =
     generateRefreshToken(
       payload
     );
-  
-  const businessMembers =
-  user.UserBusinessMember.map(
-    (item) => ({
-      businessMemberId:
-        item.businessMemberId,
 
-      name:
-        item.BusinessMember.name,
-
-      roleId:
-        item.roleId,
-
-      roleCode:
-        item.Role.code,
-
-      roleName:
-        item.Role.name,
-    })
+  const isSuperUser =
+  user.UserBusinessMember.some(
+    (item) =>
+      item.Role.code === "BA" ||
+      item.Role.code === "CR"
   );
+
+  let businessMembers = [];
+
+  // const businessMembers =
+  // user.UserBusinessMember.map(
+  //   (item) => ({
+  //     businessMemberId:
+  //       item.businessMemberId,
+
+  //     name:
+  //       item.BusinessMember.name,
+
+  //     roleId:
+  //       item.roleId,
+
+  //     roleCode:
+  //       item.Role.code,
+
+  //     roleName:
+  //       item.Role.name,
+  //   })
+  // );
+
+    if (isSuperUser) {
+
+    const members =
+      await businessMemberRepository
+        .findMany({
+          where: {
+            businessId:
+              user.businessId,
+            isActive: true,
+          },
+          orderBy: {
+            name: "asc",
+          },
+        });
+
+    businessMembers =
+      members.map(
+        (item) => ({
+          businessMemberId:
+            item.id,
+
+          name:
+            item.name,
+
+          roleId: null,
+
+          roleCode: "BA",
+
+          roleName:
+            "Business Administrator",
+        })
+      );
+
+  } else {
+
+    businessMembers =
+      user.UserBusinessMember.map(
+        (item) => ({
+
+          businessMemberId:
+            item.businessMemberId,
+
+          name:
+            item.BusinessMember.name,
+
+          roleId:
+            item.roleId,
+
+          roleCode:
+            item.Role.code,
+
+          roleName:
+            item.Role.name,
+
+        })
+      );
+
+  }
 
   return {
     userId: user.id,
