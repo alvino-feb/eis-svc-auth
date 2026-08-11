@@ -6,20 +6,18 @@ import {
 }
 from "../../common/helpers/response.js";
 
-export const login =
-  async (
-    req,
-    res,
-    next
-  ) => {
+export const login = async (
+  req,
+  res,
+  next
+) => {
 
   try {
 
-    const result =
-      await service.login(
-        req.body.username,
-        req.body.password
-      );
+    const result = await service.login(
+      req.body.username,
+      req.body.password
+    );
 
     return successResponse(
       res,
@@ -39,10 +37,9 @@ export const refreshToken = async (
 ) => {
   try {
 
-    const result =
-      await service.refreshToken(
-        req.body.refreshToken
-      );
+    const result = await service.refreshToken(
+      req.body.refreshToken
+    );
 
     return successResponse(
       res,
@@ -55,19 +52,17 @@ export const refreshToken = async (
   }
 };
 
-export const logout =
-  async (
-    req,
-    res,
-    next
-  ) => {
+export const logout = async (
+  req,
+  res,
+  next
+) => {
 
   try {
 
-    const result =
-      await service.logout(
-        req.body.username
-      );
+    const result = await service.logout(
+      req.body.username
+    );
 
     return successResponse(
       res,
