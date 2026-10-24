@@ -19,7 +19,6 @@ export const findByUsername =
         UserBusinessMember: {
           include: {
             BusinessMember: true,
-            Role: true,
           },
         },
       },
