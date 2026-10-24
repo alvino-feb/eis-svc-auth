@@ -44,7 +44,7 @@ export const login = async (
 
   const valid = await comparePassword(
     password,
-    user.password
+    user.passwordHash
   );
 
   if (!valid) {
@@ -68,14 +68,10 @@ export const login = async (
     payload
   );
 
-  const isSuperUser = user.UserBusinessMember.some(
-    (item) =>
-      item.Role.code === "BA" ||
-      item.Role.code === "CR"
-  );
-
+  const isSuperUser = user?.type === "BUSINESS_ADMINISTRATOR";
+  
   let businessMembers = [];
-
+  
   if (isSuperUser) {
 
     const members = await businessMemberRepository.findMany({
@@ -110,7 +106,7 @@ export const login = async (
       })
     );
   }
-
+  
   return {
     userId: user.id,
     username: user.username,
